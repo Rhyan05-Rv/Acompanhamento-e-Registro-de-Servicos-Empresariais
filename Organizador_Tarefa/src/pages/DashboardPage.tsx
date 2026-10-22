@@ -43,7 +43,7 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
 
   const { data, loading, error, run } = useAsync(async () => {
     const [atvs, met, and] = await Promise.all([
-      api.atividades.list({ ...(filtroStatus ? { status: filtroStatus } : {}), operacaoId }),
+      api.atividades.list({ ...(filtroStatus ? { status: filtroStatus } : {}), operacaoId, ...(periodo ? { periodo } : {}) }),
       api.metricas.get(periodo || undefined, operacaoId),
       api.metricas.andamento(operacaoId),
     ])

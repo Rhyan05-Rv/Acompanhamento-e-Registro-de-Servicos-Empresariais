@@ -153,7 +153,7 @@ export interface Metricas {
   tmaMedio: number
   porStatus: { status: string; count: number }[]
   porPrioridade: { prioridade: string; count: number }[]
-  carga: { responsavel: string; equipe: string; quantidade: number }[]
+  carga: { responsavelId: string; responsavel: string; equipe: string; quantidade: number }[]
   cargaPorEquipe: { equipe: string; quantidade: number }[]
   retrabalho: number
 }

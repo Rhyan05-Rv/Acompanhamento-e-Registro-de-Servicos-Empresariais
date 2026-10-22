@@ -142,6 +142,7 @@ export const api = {
       equipeId?: string
       fluxoId?: string
       etapaAtualId?: string
+      periodo?: string
     }) => request<Atividade[]>(`/atividades${qs(params)}`),
     get: (id: string) => request<Atividade>(`/atividades/${id}`),
     create: (data: Partial<Atividade>) =>
