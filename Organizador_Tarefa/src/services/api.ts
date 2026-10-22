@@ -6,11 +6,13 @@ import type {
   Departamento,
   Empresa,
   EtapaFluxo,
+  AprovacaoEtapa,
   Fluxo,
   FluxoAnalyticsResponse,
   Metricas,
   Operacao,
   OperacaoMembro,
+  Playbook,
   RadarResponse,
   ResumoIARadar,
   ResumoRadar,
@@ -187,6 +189,11 @@ export const api = {
     adicionarEtapa: (fluxoId: string, data: { nome: string; equipeId: string }) =>
       request<EtapaFluxo>(`/fluxos/${fluxoId}/etapas`, { method: 'POST', body: JSON.stringify(data) }),
     removerEtapa: (etapaId: string) => request<void>(`/fluxos/etapas/${etapaId}`, { method: 'DELETE' }),
+    atualizarEtapa: (etapaId: string, requerAprovacao: boolean) =>
+      request<EtapaFluxo>(`/fluxos/etapas/${etapaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ requerAprovacao }),
+      }),
   },
   casos: {
     list: (params?: { status?: string; operacaoId?: string; equipeId?: string }) =>
@@ -236,5 +243,36 @@ export const api = {
     resumo: (operacaoId?: string) => request<ResumoRadar>(`/insights/resumo${qs({ operacaoId })}`),
     resumoIA: (operacaoId?: string) =>
       request<ResumoIARadar>(`/insights/resumo-ia${qs({ operacaoId })}`, { method: 'POST' }),
+  },
+  playbooks: {
+    list: (operacaoId?: string) => request<Playbook[]>(`/playbooks${qs({ operacaoId })}`),
+    create: (data: {
+      nome: string
+      descricao?: string
+      operacaoId: string
+      itens: {
+        titulo: string
+        descricao?: string
+        prioridade: string
+        equipeId?: string | null
+        offsetDias: number
+      }[]
+    }) => request<Playbook>('/playbooks', { method: 'POST', body: JSON.stringify(data) }),
+    remove: (id: string) => request<void>(`/playbooks/${id}`, { method: 'DELETE' }),
+    executar: (id: string) =>
+      request<{ criadas: number; operacaoId: string }>(`/playbooks/${id}/executar`, {
+        method: 'POST',
+      }),
+  },
+  aprovacoes: {
+    list: (atividadeId: string) =>
+      request<AprovacaoEtapa[]>(`/atividades/${atividadeId}/aprovacoes`),
+    solicitar: (atividadeId: string) =>
+      request<AprovacaoEtapa>(`/atividades/${atividadeId}/aprovacoes`, { method: 'POST' }),
+    decidir: (id: string, decisao: 'aprovada' | 'rejeitada', comentario?: string) =>
+      request<AprovacaoEtapa>(`/aprovacoes/${id}/decidir`, {
+        method: 'POST',
+        body: JSON.stringify({ decisao, comentario }),
+      }),
   },
 }

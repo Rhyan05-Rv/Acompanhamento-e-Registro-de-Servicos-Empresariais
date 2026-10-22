@@ -48,6 +48,7 @@ export interface EtapaFluxo {
   nome: string
   ordem: number
   equipeId: string
+  requerAprovacao?: boolean
   equipe?: { id: string; nome: string }
 }
 
@@ -129,7 +130,7 @@ export interface Atividade {
   fluxoId?: string | null
   fluxo?: { id: string; nome: string; etapas?: EtapaFluxo[] } | null
   etapaAtualId?: string | null
-  etapaAtual?: { id: string; nome: string; ordem: number } | null
+  etapaAtual?: { id: string; nome: string; ordem: number; requerAprovacao?: boolean } | null
   status: StatusAtividade
   prioridade: Prioridade
   prazoEstimado?: string | null
@@ -304,4 +305,43 @@ export interface ResumoIARadar {
   texto: string
   fonte: 'ia' | 'deterministico'
   iaDisponivel: boolean
+}
+
+export interface PlaybookItem {
+  id: string
+  playbookId: string
+  titulo: string
+  descricao?: string | null
+  prioridade: Prioridade
+  equipeId?: string | null
+  equipe?: { id: string; nome: string } | null
+  offsetDias: number
+  ordem: number
+}
+
+export interface Playbook {
+  id: string
+  empresaId: string
+  operacaoId?: string | null
+  operacao?: { id: string; nome: string } | null
+  nome: string
+  descricao?: string | null
+  criadoPorId: string
+  itens: PlaybookItem[]
+  createdAt: string
+}
+
+export type StatusAprovacao = 'pendente' | 'aprovada' | 'rejeitada'
+
+export interface AprovacaoEtapa {
+  id: string
+  atividadeId: string
+  etapaId: string
+  status: StatusAprovacao
+  etapa?: { id: string; nome: string; ordem: number; requerAprovacao: boolean }
+  solicitadoPor?: { id: string; nome: string }
+  decididoPor?: { id: string; nome: string } | null
+  comentario?: string | null
+  createdAt: string
+  decididoEm?: string | null
 }
