@@ -19,10 +19,12 @@ import {
   Building2,
   Menu,
   Radar,
+  BookOpen,
 } from 'lucide-react'
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const RadarPage = lazy(() => import('../pages/RadarPage').then(m => ({ default: m.RadarPage })))
+const PlaybooksPage = lazy(() => import('../pages/PlaybooksPage').then(m => ({ default: m.PlaybooksPage })))
 const OperacoesPage = lazy(() => import('../pages/OperacoesPage').then(m => ({ default: m.OperacoesPage })))
 const OperacaoPage = lazy(() => import('../pages/OperacaoPage').then(m => ({ default: m.OperacaoPage })))
 const EquipeKanbanPage = lazy(() => import('../pages/EquipeKanbanPage').then(m => ({ default: m.EquipeKanbanPage })))
@@ -94,6 +96,10 @@ function Sidebar({ className = '', onNavigate }: { className?: string; onNavigat
             <div className="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-content-subtle">
               Gestão
             </div>
+            <NavLink to="/playbooks" className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
+              <BookOpen className="w-4 h-4" />
+              Playbooks
+            </NavLink>
             <NavLink to="/admin" className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
               <Settings className="w-4 h-4" />
               Administração
@@ -197,6 +203,7 @@ export function AppRoutes() {
                 <Route path="operacoes" element={<OperacoesPage />} />
                 <Route path="operacoes/:operacaoId" element={<OperacaoPage />} />
                 <Route path="operacoes/:operacaoId/equipes/:equipeId" element={<EquipeKanbanPage />} />
+                <Route path="playbooks" element={<RequireGestor><PlaybooksPage /></RequireGestor>} />
                 <Route path="admin" element={<RequireGestor><AdminPage /></RequireGestor>} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
