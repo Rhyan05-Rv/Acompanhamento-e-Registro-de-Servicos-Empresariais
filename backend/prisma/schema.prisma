@@ -13,6 +13,7 @@ model Empresa {
   createdAt DateTime   @default(now())
   usuarios  Usuario[]
   operacoes Operacao[]
+  playbooks Playbook[]
 }
 
 model Operacao {
@@ -27,6 +28,7 @@ model Operacao {
   atividades    Atividade[]
   casos         Caso[]
   membros       OperacaoMembro[]
+  playbooks     Playbook[]
 
   @@index([empresaId])
 }
@@ -45,44 +47,48 @@ model OperacaoMembro {
 }
 
 model Usuario {
-  id            String        @id @default(uuid())
-  nome          String
-  email         String        @unique
-  senha         String
-  funcao        String
-  nivelAcesso   String        @default("operacional")
-  empresaId     String
-  empresa       Empresa       @relation(fields: [empresaId], references: [id])
-  createdAt     DateTime      @default(now())
-  membros       OperacaoMembro[]
-  atividades    Atividade[]   @relation("Responsavel")
-  participacoes AtividadeResponsavel[]
-  solicitacoes  Atividade[]   @relation("Solicitante")
-  criadas       Atividade[]   @relation("Criador")
-  movimentacoes MovimentacaoEtapa[]
-  casos         Caso[]
+  id                    String                 @id @default(uuid())
+  nome                  String
+  email                 String                 @unique
+  senha                 String
+  funcao                String
+  nivelAcesso           String                 @default("operacional")
+  empresaId             String
+  empresa               Empresa                @relation(fields: [empresaId], references: [id])
+  createdAt             DateTime               @default(now())
+  membros               OperacaoMembro[]
+  atividades            Atividade[]            @relation("Responsavel")
+  participacoes         AtividadeResponsavel[]
+  solicitacoes          Atividade[]            @relation("Solicitante")
+  criadas               Atividade[]            @relation("Criador")
+  movimentacoes         MovimentacaoEtapa[]
+  casos                 Caso[]
+  playbooks             Playbook[]             @relation("PlaybookCriador")
+  aprovacoesSolicitadas AprovacaoEtapa[]       @relation("AprovacaoSolicitante")
+  aprovacoesDecididas   AprovacaoEtapa[]       @relation("AprovacaoDecisor")
 }
 
 model Departamento {
-  id         String           @id @default(uuid())
-  operacaoId String
-  operacao   Operacao         @relation(fields: [operacaoId], references: [id])
-  nome       String
-  atividades Atividade[]
-  etapas     EtapaFluxo[]
-  casos      Caso[]
-  membros    OperacaoMembro[]
+  id            String           @id @default(uuid())
+  operacaoId    String
+  operacao      Operacao         @relation(fields: [operacaoId], references: [id])
+  nome          String
+  atividades    Atividade[]
+  etapas        EtapaFluxo[]
+  casos         Caso[]
+  membros       OperacaoMembro[]
+  playbookItens PlaybookItem[]
 
   @@index([operacaoId])
 }
 
 model Fluxo {
-  id         String        @id @default(uuid())
+  id         String       @id @default(uuid())
   operacaoId String
-  operacao   Operacao      @relation(fields: [operacaoId], references: [id])
+  operacao   Operacao     @relation(fields: [operacaoId], references: [id])
   nome       String
   descricao  String?
-  createdAt  DateTime      @default(now())
+  createdAt  DateTime     @default(now())
   etapas     EtapaFluxo[]
   atividades Atividade[]
 
@@ -90,50 +96,53 @@ model Fluxo {
 }
 
 model EtapaFluxo {
-  id         String              @id @default(uuid())
-  fluxoId    String
-  fluxo      Fluxo               @relation(fields: [fluxoId], references: [id])
-  nome       String
-  ordem      Int
-  equipeId   String
-  equipe     Departamento        @relation(fields: [equipeId], references: [id])
-  atividades Atividade[]         @relation("EtapaAtual")
-  movOrigem  MovimentacaoEtapa[] @relation("EtapaOrigem")
-  movDestino MovimentacaoEtapa[] @relation("EtapaDestino")
+  id              String              @id @default(uuid())
+  fluxoId         String
+  fluxo           Fluxo               @relation(fields: [fluxoId], references: [id])
+  nome            String
+  ordem           Int
+  equipeId        String
+  requerAprovacao Boolean             @default(false)
+  equipe          Departamento        @relation(fields: [equipeId], references: [id])
+  atividades      Atividade[]         @relation("EtapaAtual")
+  movOrigem       MovimentacaoEtapa[] @relation("EtapaOrigem")
+  movDestino      MovimentacaoEtapa[] @relation("EtapaDestino")
+  aprovacoes      AprovacaoEtapa[]
 
   @@unique([fluxoId, ordem])
 }
 
 model Atividade {
-  id            String        @id @default(uuid())
+  id            String                 @id @default(uuid())
   operacaoId    String
-  operacao      Operacao      @relation(fields: [operacaoId], references: [id])
+  operacao      Operacao               @relation(fields: [operacaoId], references: [id])
   titulo        String
   descricao     String?
   responsavelId String
-  responsavel   Usuario       @relation("Responsavel", fields: [responsavelId], references: [id])
+  responsavel   Usuario                @relation("Responsavel", fields: [responsavelId], references: [id])
   solicitanteId String?
-  solicitante   Usuario?      @relation("Solicitante", fields: [solicitanteId], references: [id])
+  solicitante   Usuario?               @relation("Solicitante", fields: [solicitanteId], references: [id])
   criadoPorId   String?
-  criadoPor     Usuario?      @relation("Criador", fields: [criadoPorId], references: [id])
+  criadoPor     Usuario?               @relation("Criador", fields: [criadoPorId], references: [id])
   equipeId      String?
-  equipe        Departamento? @relation(fields: [equipeId], references: [id])
+  equipe        Departamento?          @relation(fields: [equipeId], references: [id])
   fluxoId       String?
-  fluxo         Fluxo?        @relation(fields: [fluxoId], references: [id])
+  fluxo         Fluxo?                 @relation(fields: [fluxoId], references: [id])
   etapaAtualId  String?
-  etapaAtual    EtapaFluxo?   @relation("EtapaAtual", fields: [etapaAtualId], references: [id])
-  status        String        @default("pendente")
-  prioridade    String        @default("media")
+  etapaAtual    EtapaFluxo?            @relation("EtapaAtual", fields: [etapaAtualId], references: [id])
+  status        String                 @default("pendente")
+  prioridade    String                 @default("media")
   prazoEstimado DateTime?
   dataInicio    DateTime?
   dataConclusao DateTime?
   tempoGastoMin Int?
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime               @default(now())
   deletedAt     DateTime?
   historico     Historico[]
   movimentacoes MovimentacaoEtapa[]
   casos         Caso[]
   responsaveis  AtividadeResponsavel[]
+  aprovacoes    AprovacaoEtapa[]
 
   @@index([operacaoId])
 }
@@ -204,4 +213,54 @@ model Anexo {
   caminho   String
   mime      String?
   createdAt DateTime @default(now())
+}
+
+model Playbook {
+  id          String         @id @default(uuid())
+  empresaId   String
+  empresa     Empresa        @relation(fields: [empresaId], references: [id])
+  operacaoId  String?
+  operacao    Operacao?      @relation(fields: [operacaoId], references: [id])
+  nome        String
+  descricao   String?
+  criadoPorId String
+  criadoPor   Usuario        @relation("PlaybookCriador", fields: [criadoPorId], references: [id])
+  itens       PlaybookItem[]
+  createdAt   DateTime       @default(now())
+
+  @@index([empresaId])
+  @@index([operacaoId])
+}
+
+model PlaybookItem {
+  id         String        @id @default(uuid())
+  playbookId String
+  playbook   Playbook      @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  titulo     String
+  descricao  String?
+  prioridade String        @default("media")
+  equipeId   String?
+  equipe     Departamento? @relation(fields: [equipeId], references: [id])
+  offsetDias Int           @default(0)
+  ordem      Int           @default(0)
+
+  @@index([playbookId])
+}
+
+model AprovacaoEtapa {
+  id              String     @id @default(uuid())
+  atividadeId     String
+  atividade       Atividade  @relation(fields: [atividadeId], references: [id])
+  etapaId         String
+  etapa           EtapaFluxo @relation(fields: [etapaId], references: [id])
+  status          String     @default("pendente")
+  solicitadoPorId String
+  solicitadoPor   Usuario    @relation("AprovacaoSolicitante", fields: [solicitadoPorId], references: [id])
+  decididoPorId   String?
+  decididoPor     Usuario?   @relation("AprovacaoDecisor", fields: [decididoPorId], references: [id])
+  comentario      String?
+  createdAt       DateTime   @default(now())
+  decididoEm      DateTime?
+
+  @@unique([atividadeId, etapaId])
 }
