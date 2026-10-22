@@ -8,6 +8,7 @@ export interface AtividadeAnalitica {
   id: string
   titulo: string
   status: string
+  prioridade?: string
   createdAt: Date
   dataInicio: Date | null
   dataConclusao: Date | null
