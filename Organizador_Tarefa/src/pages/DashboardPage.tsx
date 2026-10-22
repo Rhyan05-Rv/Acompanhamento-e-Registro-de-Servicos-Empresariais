@@ -349,4 +349,3 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
     </div>
   )
 }
-
