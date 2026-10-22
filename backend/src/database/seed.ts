@@ -51,10 +51,18 @@ async function seed() {
     const mapa: { id: string; equipeId: string }[] = []
     for (let i = 0; i < etapas.length; i++) {
       const e = etapas[i]
+      const requerAprovacao = ['Forno', 'Expedição'].includes(e.nome)
       await prisma.etapaFluxo.upsert({
         where: { fluxoId_ordem: { fluxoId: id, ordem: i + 1 } },
-        update: { nome: e.nome, equipeId: e.equipeId },
-        create: { id: e.id, fluxoId: id, ordem: i + 1, nome: e.nome, equipeId: e.equipeId },
+        update: { nome: e.nome, equipeId: e.equipeId, requerAprovacao },
+        create: {
+          id: e.id,
+          fluxoId: id,
+          ordem: i + 1,
+          nome: e.nome,
+          equipeId: e.equipeId,
+          requerAprovacao,
+        },
       })
       mapa.push({ id: e.id, equipeId: e.equipeId })
     }
@@ -325,6 +333,30 @@ async function seed() {
       data: { ...rest, ...(anexo ? { anexos: { create: [anexo] } } : {}) },
     })
   }
+
+  // ================= PLAYBOOK DEMO =================
+  const playbookId = 'b0000000-0000-0000-0000-000000000001'
+  await prisma.playbook.upsert({
+    where: { id: playbookId },
+    update: { nome: 'Produção de bolo padrão', descricao: 'Checklist de uma encomenda padrão', operacaoId: opBolo.id, empresaId: aurora.id, criadoPorId: adminAurora.id },
+    create: {
+      id: playbookId,
+      empresaId: aurora.id,
+      operacaoId: opBolo.id,
+      criadoPorId: adminAurora.id,
+      nome: 'Produção de bolo padrão',
+      descricao: 'Checklist de uma encomenda padrão',
+    },
+  })
+  await prisma.playbookItem.deleteMany({ where: { playbookId } })
+  await prisma.playbookItem.createMany({
+    data: [
+      { playbookId, titulo: 'Conferir ingredientes', prioridade: 'alta', equipeId: mistura.id, offsetDias: 0, ordem: 0 },
+      { playbookId, titulo: 'Montar a forma', prioridade: 'media', equipeId: forma.id, offsetDias: 1, ordem: 1 },
+      { playbookId, titulo: 'Assar o lote', prioridade: 'alta', equipeId: forno.id, offsetDias: 2, ordem: 2 },
+      { playbookId, titulo: 'Finalizar e embalar', prioridade: 'media', equipeId: finalizacao.id, offsetDias: 3, ordem: 3 },
+    ],
+  })
 
   console.log('Seed concluído!')
 }

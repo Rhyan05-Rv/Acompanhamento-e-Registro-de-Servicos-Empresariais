@@ -13,6 +13,7 @@ import {
   adicionarResponsavel,
   removerResponsavel,
 } from '../services/atividadeService.js'
+import { listarAprovacoes, solicitarAprovacao } from '../services/aprovacaoService.js'
 import { responderErro } from './httpError.js'
 
 const router = Router()
@@ -129,6 +130,26 @@ router.post('/:id/responsaveis', async (req: AuthRequest, res: Response) => {
 router.delete('/:id/responsaveis/:usuarioId', async (req: AuthRequest, res: Response) => {
   try {
     return res.json(await removerResponsavel(req.params.id as string, req.params.usuarioId as string, req.userId!, req.empresaId!, req.userLevel!))
+  } catch (err) {
+    return responderErro(err, res)
+  }
+})
+
+router.get('/:id/aprovacoes', async (req: AuthRequest, res: Response) => {
+  try {
+    return res.json(
+      await listarAprovacoes(req.params.id as string, req.empresaId!, req.userId!, req.userLevel!)
+    )
+  } catch (err) {
+    return responderErro(err, res)
+  }
+})
+
+router.post('/:id/aprovacoes', async (req: AuthRequest, res: Response) => {
+  try {
+    return res.status(201).json(
+      await solicitarAprovacao(req.params.id as string, req.empresaId!, req.userId!, req.userLevel!)
+    )
   } catch (err) {
     return responderErro(err, res)
   }

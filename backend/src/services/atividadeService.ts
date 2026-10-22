@@ -12,7 +12,7 @@ const includeCard = {
   criadoPor: { select: { id: true, nome: true } },
   operacao: { select: { id: true, nome: true } },
   equipe: { select: { id: true, nome: true } },
-  etapaAtual: { select: { id: true, nome: true, ordem: true } },
+  etapaAtual: { select: { id: true, nome: true, ordem: true, requerAprovacao: true } },
   fluxo: { select: { id: true, nome: true } },
 }
 
@@ -271,6 +271,20 @@ async function moverEtapa(id: string, userId: string, empresaId: string, nivel: 
 
   if (direcao === 1 && atividade.status !== 'concluido') {
     throw new AppError('Conclua a etapa atual antes de avançar')
+  }
+
+  if (direcao === 1 && atividade.etapaAtual.requerAprovacao) {
+    const aprovacao = await prisma.aprovacaoEtapa.findUnique({
+      where: {
+        atividadeId_etapaId: {
+          atividadeId: id,
+          etapaId: atividade.etapaAtual.id,
+        },
+      },
+    })
+    if (!aprovacao || aprovacao.status !== 'aprovada') {
+      throw new AppError('Esta etapa exige aprovação antes de avançar')
+    }
   }
 
   const etapas = atividade.fluxo.etapas

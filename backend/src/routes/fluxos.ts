@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { z } from 'zod'
 import { AuthRequest, authMiddleware, gestorOnly } from '../middleware/auth.js'
 import { listarFluxos, criarFluxo, adicionarEtapa, removerEtapa } from '../services/fluxoService.js'
+import { atualizarEtapa } from '../services/etapaService.js'
 import { assertAcessoOperacao, escopoOperacoes } from '../services/acesso.js'
 import { responderErro } from './httpError.js'
 
@@ -41,6 +42,17 @@ router.post('/:id/etapas', gestorOnly, async (req: AuthRequest, res: Response) =
   try {
     const data = etapaSchema.parse(req.body)
     return res.status(201).json(await adicionarEtapa(req.empresaId!, req.params.id as string, data))
+  } catch (err) {
+    return responderErro(err, res)
+  }
+})
+
+const atualizarEtapaSchema = z.object({ requerAprovacao: z.boolean() })
+
+router.patch('/etapas/:etapaId', gestorOnly, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = atualizarEtapaSchema.parse(req.body)
+    return res.json(await atualizarEtapa(req.empresaId!, req.params.etapaId as string, data))
   } catch (err) {
     return responderErro(err, res)
   }

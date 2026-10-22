@@ -13,6 +13,8 @@ import casoRoutes from './routes/casos.js'
 import empresaRoutes from './routes/empresas.js'
 import operacaoRoutes from './routes/operacoes.js'
 import insightsRoutes from './routes/insights.js'
+import playbookRoutes from './routes/playbooks.js'
+import aprovacaoRoutes from './routes/aprovacoes.js'
 import { responderErro } from './routes/httpError.js'
 
 const obrigatorias = ['DATABASE_URL', 'JWT_SECRET'] as const
@@ -54,6 +56,8 @@ app.use('/api/departamentos', departamentoRoutes)
 app.use('/api/fluxos', fluxoRoutes)
 app.use('/api/casos', casoRoutes)
 app.use('/api/insights', insightsRoutes)
+app.use('/api/playbooks', playbookRoutes)
+app.use('/api/aprovacoes', aprovacaoRoutes)
 
 app.get('/api/health', (_, res) => {
   res.json({ status: 'ok' })
