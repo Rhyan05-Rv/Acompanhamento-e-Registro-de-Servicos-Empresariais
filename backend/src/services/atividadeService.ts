@@ -214,7 +214,21 @@ export async function editarAtividade(id: string, dados: EdicaoInput, userId: st
     return prisma.atividade.findFirst({ where: { id }, include: includeCard })
   }
 
+  if (data.responsavelId) {
+    const usuario = await prisma.usuario.findFirst({ where: { id: data.responsavelId, empresaId } })
+    if (!usuario) throw new AppError('Usuário não pertence à empresa')
+  }
+
   const atividade = await prisma.atividade.update({ where: { id }, data, include: includeCard })
+
+  if (data.responsavelId) {
+    await prisma.atividadeResponsavel.upsert({
+      where: { atividadeId_usuarioId: { atividadeId: id, usuarioId: data.responsavelId } },
+      update: {},
+      create: { atividadeId: id, usuarioId: data.responsavelId },
+    })
+  }
+
   for (const log of logs) {
     await registrarHistorico(id, userId, 'edicao', log)
   }
