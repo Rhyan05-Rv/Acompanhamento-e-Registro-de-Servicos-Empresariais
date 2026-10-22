@@ -2,6 +2,8 @@ import { prisma } from '../database/prisma.js'
 import { AppError } from './errors.js'
 import { diferenciarEdicao } from './edicaoCalculos.js'
 import { assertAcessoOperacao, operacoesAcessiveis } from './acesso.js'
+import { periodoFiltro } from './periodoFiltro.js'
+import { ordenarPorPrioridade } from './ordenacaoCalculos.js'
 
 const includeCard = {
   responsavel: { select: { id: true, nome: true, email: true } },
@@ -72,6 +74,7 @@ export interface FiltrosAtividade {
   equipeId?: string
   fluxoId?: string
   etapaAtualId?: string
+  periodo?: string
 }
 
 export async function listarAtividades(
@@ -80,7 +83,7 @@ export async function listarAtividades(
   empresaId: string,
   filtros: FiltrosAtividade
 ) {
-  const where: any = { deletedAt: null, operacao: { empresaId } }
+  const where: any = { deletedAt: null, operacao: { empresaId }, ...periodoFiltro(filtros.periodo) }
 
   if (filtros.operacaoId) {
     await assertAcessoOperacao(filtros.operacaoId, userId, empresaId, nivel)
@@ -97,11 +100,13 @@ export async function listarAtividades(
   if (filtros.fluxoId) where.fluxoId = filtros.fluxoId
   if (filtros.etapaAtualId) where.etapaAtualId = filtros.etapaAtualId
 
-  return prisma.atividade.findMany({
+  const atividades = await prisma.atividade.findMany({
     where,
     include: includeCard,
-    orderBy: [{ prioridade: 'asc' }, { createdAt: 'desc' }],
+    orderBy: { createdAt: 'desc' },
   })
+
+  return ordenarPorPrioridade(atividades)
 }
 
 export async function buscarAtividade(id: string, empresaId: string, userId: string, nivel: string) {

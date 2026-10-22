@@ -1,26 +1,6 @@
 import { prisma } from '../database/prisma.js'
 import { calcularAderenciaPrazos, calcularTma } from './metricasCalculos.js'
-
-function periodoFiltro(periodo?: string) {
-  if (!periodo) return {}
-  const agora = new Date()
-  if (periodo === 'dia') {
-    const inicio = new Date(agora)
-    inicio.setHours(0, 0, 0, 0)
-    return { createdAt: { gte: inicio } }
-  }
-  if (periodo === 'semana') {
-    const inicio = new Date(agora)
-    inicio.setDate(inicio.getDate() - 7)
-    return { createdAt: { gte: inicio } }
-  }
-  if (periodo === 'mes') {
-    const inicio = new Date(agora)
-    inicio.setMonth(inicio.getMonth() - 1)
-    return { createdAt: { gte: inicio } }
-  }
-  return {}
-}
+import { periodoFiltro } from './periodoFiltro.js'
 
 export async function getMetricas(empresaId: string, periodo?: string, operacaoId?: string, operacaoIds?: string[] | null) {
   const where: any = { deletedAt: null, operacao: { empresaId }, ...periodoFiltro(periodo) }
@@ -45,12 +25,13 @@ export async function getMetricas(empresaId: string, periodo?: string, operacaoI
     }),
   ])
 
-  const cargaMap = new Map<string, { responsavel: string; equipe: string; quantidade: number }>()
+  const cargaMap = new Map<string, { responsavelId: string; responsavel: string; equipe: string; quantidade: number }>()
   for (const a of abertas) {
     const atual = cargaMap.get(a.responsavelId)
     if (atual) atual.quantidade++
     else
       cargaMap.set(a.responsavelId, {
+        responsavelId: a.responsavelId,
         responsavel: a.responsavel?.nome ?? 'Desconhecido',
         equipe: a.equipe?.nome ?? 'Sem equipe',
         quantidade: 1,
@@ -66,7 +47,11 @@ export async function getMetricas(empresaId: string, periodo?: string, operacaoI
     where: {
       acaoExecutada: 'mudanca_status',
       alteracaoEstado: { endsWith: '→ revisao' },
-      atividade: { operacao: { empresaId }, ...(operacaoId ? { operacaoId } : operacaoIds ? { operacaoId: { in: operacaoIds } } : {}) },
+      atividade: {
+        operacao: { empresaId },
+        ...(operacaoId ? { operacaoId } : operacaoIds ? { operacaoId: { in: operacaoIds } } : {}),
+        ...periodoFiltro(periodo),
+      },
     },
   })
 

@@ -54,6 +54,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       equipeId: f.equipeId,
       fluxoId: f.fluxoId,
       etapaAtualId: f.etapaAtualId,
+      periodo: f.periodo,
     })
     return res.json(atividades)
   } catch (err) {
