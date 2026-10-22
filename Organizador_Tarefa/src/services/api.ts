@@ -11,6 +11,9 @@ import type {
   Metricas,
   Operacao,
   OperacaoMembro,
+  RadarResponse,
+  ResumoIARadar,
+  ResumoRadar,
   SerieAnalytics,
   Usuario,
 } from '../types'
@@ -224,5 +227,14 @@ export const api = {
     fluxo: (operacaoId?: string) => request<FluxoAnalyticsResponse>(`/metricas/fluxo${qs({ operacaoId })}`),
     serie: (periodo?: string, operacaoId?: string) =>
       request<SerieAnalytics>(`/metricas/serie${qs({ periodo, operacaoId })}`),
+  },
+  insights: {
+    risco: (operacaoId?: string, limite?: number) =>
+      request<RadarResponse>(
+        `/insights/risco${qs({ operacaoId, limite: limite ? String(limite) : undefined })}`
+      ),
+    resumo: (operacaoId?: string) => request<ResumoRadar>(`/insights/resumo${qs({ operacaoId })}`),
+    resumoIA: (operacaoId?: string) =>
+      request<ResumoIARadar>(`/insights/resumo-ia${qs({ operacaoId })}`, { method: 'POST' }),
   },
 }

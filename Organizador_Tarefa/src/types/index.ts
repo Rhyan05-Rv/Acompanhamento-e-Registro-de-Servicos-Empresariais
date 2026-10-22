@@ -251,3 +251,57 @@ export interface SerieAnalytics {
   bloqueadas: number
   geradoEm: string
 }
+
+export type NivelRisco = 'critico' | 'alto' | 'medio' | 'baixo'
+
+export interface SugestaoResponsavel {
+  usuarioId: string
+  nome: string
+  cargaAtual: number
+  cargaSugerida: number
+}
+
+export interface ItemRadar {
+  id: string
+  titulo: string
+  operacaoId: string
+  operacao: string
+  fluxo: string | null
+  etapa: string | null
+  equipe: string | null
+  responsavelId: string
+  responsavel: string
+  status: StatusAtividade
+  prioridade: Prioridade
+  prazoEstimado: string | null
+  horasNaEtapa: number
+  score: number
+  nivel: NivelRisco
+  motivos: string[]
+  sugestao: SugestaoResponsavel | null
+}
+
+export interface RadarResponse {
+  itens: ItemRadar[]
+  geradoEm: string
+}
+
+export interface ResumoRadar {
+  total: number
+  criticas: number
+  altas: number
+  medias: number
+  vencidas: number
+  bloqueadas: number
+  sugestoes: number
+  gargalo: { etapa: string; fluxo: string; tempoMedioHoras: number } | null
+  texto: string
+  iaDisponivel: boolean
+  geradoEm: string
+}
+
+export interface ResumoIARadar {
+  texto: string
+  fonte: 'ia' | 'deterministico'
+  iaDisponivel: boolean
+}
