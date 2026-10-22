@@ -17,8 +17,63 @@ export type { Andamento, Metricas } from '../types'
 
 const BASE = '/api'
 
+interface ErroApi {
+  error?: string
+  code?: string
+  requestId?: string
+}
+
 function getToken() {
   return localStorage.getItem('token')
+}
+
+const isRotaAuth = (path: string) => path.startsWith('/auth/')
+
+let requisicoesAtivas = 0
+let timerCursor: number | undefined
+
+function iniciarCursorCarregando() {
+  if (typeof document === 'undefined') return
+
+  requisicoesAtivas++
+  if (requisicoesAtivas !== 1) return
+
+  timerCursor = window.setTimeout(() => {
+    document.documentElement.dataset.carregando = 'true'
+  }, 120)
+}
+
+function finalizarCursorCarregando() {
+  if (typeof document === 'undefined') return
+
+  requisicoesAtivas = Math.max(0, requisicoesAtivas - 1)
+  if (requisicoesAtivas > 0) return
+
+  if (timerCursor !== undefined) window.clearTimeout(timerCursor)
+  timerCursor = undefined
+  delete document.documentElement.dataset.carregando
+}
+
+async function lerErro(res: Response, path: string, method: string, token: string | null): Promise<never> {
+  const body = (await res.json().catch(() => null)) as ErroApi | null
+  const requestId = body?.requestId ?? res.headers.get('x-request-id') ?? undefined
+  const mensagem = body?.error || `HTTP ${res.status}`
+
+  if (res.status === 401 && token && !isRotaAuth(path)) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('usuario')
+    if (window.location.pathname !== '/login') window.location.href = '/login'
+    throw new Error('Sessão expirada. Faça login novamente.')
+  }
+
+  if (res.status >= 500) {
+    console.error(`[api] ${method} ${path} → ${res.status}`, {
+      code: body?.code,
+      requestId,
+    })
+  }
+
+  throw new Error(requestId ? `${mensagem} (ref: ${requestId})` : mensagem)
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -29,19 +84,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers })
-
-  if (res.status === 401) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('usuario')
-    if (window.location.pathname !== '/login') window.location.href = '/login'
-    throw new Error('Sessão expirada. Faça login novamente.')
+  let res: Response
+  iniciarCursorCarregando()
+  try {
+    res = await fetch(`${BASE}${path}`, { ...options, headers })
+  } catch {
+    throw new Error('Não foi possível conectar à API. Verifique se o backend está rodando.')
+  } finally {
+    finalizarCursorCarregando()
   }
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
-  }
+  if (!res.ok) return lerErro(res, path, options.method ?? 'GET', token)
 
   if (res.status === 204) return undefined as T
   return res.json()
@@ -141,15 +194,23 @@ export const api = {
       const form = new FormData()
       form.append('arquivo', arquivo)
       const token = getToken()
-      const res = await fetch(`${BASE}/casos/${id}/anexos`, {
-        method: 'POST',
-        body: form,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Erro no upload' }))
-        throw new Error(err.error || `HTTP ${res.status}`)
+      const path = `/casos/${id}/anexos`
+
+      let res: Response
+      iniciarCursorCarregando()
+      try {
+        res = await fetch(`${BASE}${path}`, {
+          method: 'POST',
+          body: form,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        })
+      } catch {
+        throw new Error('Não foi possível conectar à API. Verifique se o backend está rodando.')
+      } finally {
+        finalizarCursorCarregando()
       }
+
+      if (!res.ok) return lerErro(res, path, 'POST', token)
       return res.json()
     },
   },
