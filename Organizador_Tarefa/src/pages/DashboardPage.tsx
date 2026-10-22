@@ -14,6 +14,7 @@ import { STATUS, STATUS_ORDEM, PRIORIDADE } from '../theme/status'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Spinner } from '../components/ui/Spinner'
 import { TorreControle } from '../components/torre/TorreControle'
+import { RadarWidget } from '../components/radar/RadarWidget'
 
 type Aba = 'geral' | 'andamento'
 
@@ -141,6 +142,8 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
               </div>
             ))}
           </div>
+
+          <RadarWidget operacaoId={operacaoId} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger">
             <div className="card p-5">
