@@ -9,6 +9,9 @@ function aplicar(tema: Tema) {
   const root = document.documentElement
   root.classList.toggle('dark', tema === 'dark')
   root.style.colorScheme = tema
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', tema === 'dark' ? '#15160f' : '#f7f5ef')
 }
 
 function temaAtual(): Tema {

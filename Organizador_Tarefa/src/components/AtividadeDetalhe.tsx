@@ -101,7 +101,7 @@ export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
           <div className="py-8 text-center text-sm text-content-subtle">{erro || 'Carregando...'}</div>
         ) : (
           <>
-            {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-xl px-3 py-2 mb-3">{erro}</p>}
+            {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-lg px-3 py-2 mb-3">{erro}</p>}
 
             {/* Metadados */}
             <div className="grid grid-cols-2 gap-2 text-sm text-content-muted mb-4">

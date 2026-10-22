@@ -188,11 +188,11 @@ function NovoCasoModal({
           ))}
         </select>
         <input type="file" onChange={e => setArquivo(e.target.files?.[0] ?? null)} className="input !py-2 text-sm" />
-        {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-xl px-3 py-2">{erro}</p>}
+        {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-lg px-3 py-2">{erro}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="btn btn-secondary">Cancelar</button>
           <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading && <Spinner className="w-4 h-4 !border-2" />} Registrar
+            {loading && <Spinner className="w-4 h-4 !border-2 !border-current" />} Registrar
           </button>
         </div>
       </form>

@@ -161,12 +161,12 @@ export function NovaAtividadeModal({ onClose, onCreated, operacaoId }: Props) {
           </Field>
         </div>
 
-        {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-xl px-3 py-2">{erro}</p>}
+        {erro && <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-lg px-3 py-2">{erro}</p>}
 
         <div className="flex gap-2 justify-end pt-1">
           <button type="button" onClick={onClose} className="btn btn-secondary">Cancelar</button>
           <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading && <Spinner className="w-4 h-4 !border-2" />}
+            {loading && <Spinner className="w-4 h-4 !border-2 !border-current" />}
             Criar
           </button>
         </div>

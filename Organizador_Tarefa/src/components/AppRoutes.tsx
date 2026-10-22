@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, NavLink, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { AuthProvider } from '../context/AuthProvider'
 import { ToastProvider } from '../context/ToastProvider'
@@ -9,6 +9,7 @@ import type { Operacao } from '../types'
 import { LoginPage } from '../pages/LoginPage'
 import { RegistroPage } from '../pages/RegistroPage'
 import { ThemeToggle } from './ThemeToggle'
+import { BrandMark } from './Brand'
 import { FullPageSpinner } from './ui/Spinner'
 import {
   LayoutDashboard,
@@ -16,7 +17,6 @@ import {
   Settings,
   LogOut,
   Building2,
-  Workflow,
   Menu,
 } from 'lucide-react'
 
@@ -42,8 +42,8 @@ function Sidebar({ className = '', onNavigate }: { className?: string; onNavigat
     <aside className={`w-64 shrink-0 bg-surface border-r border-border flex-col ${className}`}>
       <div className="p-5 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo-500 flex items-center justify-center shadow-soft">
-            <Workflow className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary border border-primary/15 flex items-center justify-center">
+            <BrandMark className="w-6 h-6" />
           </div>
           <div className="min-w-0">
             <h2 className="font-bold text-sm text-content truncate">
@@ -126,8 +126,8 @@ function MobileTopBar({ onMenu }: { onMenu: () => void }) {
         <button className="btn-icon" onClick={onMenu} aria-label="Abrir menu">
           <Menu className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-indigo-500 flex items-center justify-center shrink-0">
-          <Workflow className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-lg bg-primary-soft text-primary border border-primary/15 flex items-center justify-center shrink-0">
+          <BrandMark className="w-5 h-5" />
         </div>
         <span className="font-semibold text-sm truncate">{usuario?.empresa?.nome ?? 'Organizador'}</span>
       </div>
@@ -145,6 +145,7 @@ function RequireGestor({ children }: { children: ReactNode }) {
 function ProtectedLayout() {
   const { usuario } = useAuth()
   const [menu, setMenu] = useState(false)
+  const location = useLocation()
 
   if (!usuario) return <Navigate to="/login" replace />
 
@@ -154,7 +155,7 @@ function ProtectedLayout() {
 
       {menu && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setMenu(false)} />
+          <div className="absolute inset-0 bg-[#12130b]/60 backdrop-blur-sm animate-fade-in" onClick={() => setMenu(false)} />
           <div className="absolute left-0 top-0 h-full animate-fade-in">
             <Sidebar className="flex h-full" onNavigate={() => setMenu(false)} />
           </div>
@@ -164,9 +165,11 @@ function ProtectedLayout() {
       <div className="flex-1 min-w-0 flex flex-col">
         <MobileTopBar onMenu={() => setMenu(true)} />
         <main className="flex-1 overflow-auto">
-          <Suspense fallback={<FullPageSpinner />}>
-            <Outlet />
-          </Suspense>
+          <div key={location.pathname} className="h-full animate-page-in">
+            <Suspense fallback={<FullPageSpinner />}>
+              <Outlet />
+            </Suspense>
+          </div>
         </main>
       </div>
     </div>

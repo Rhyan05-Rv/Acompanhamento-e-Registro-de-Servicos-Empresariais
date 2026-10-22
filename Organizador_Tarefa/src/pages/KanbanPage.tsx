@@ -47,7 +47,7 @@ export function KanbanPage({ operacaoId, equipeId, titulo = 'Tarefas', subtitulo
     <div className="h-full flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-surface border-b border-border">
         <div>
-          <h1 className="text-lg font-bold tracking-tight text-content">{titulo}</h1>
+          <h1 className="font-display text-xl font-semibold tracking-tight text-content">{titulo}</h1>
           {subtitulo && <p className="text-xs text-content-muted">{subtitulo}</p>}
         </div>
         <div className="flex items-center gap-3">
@@ -85,11 +85,11 @@ export function KanbanPage({ operacaoId, equipeId, titulo = 'Tarefas', subtitulo
             const itens = atividades.filter(a => a.status === status)
             return (
               <div key={status} className="flex-shrink-0 w-72">
-                <div className={`rounded-t-2xl px-3.5 py-2.5 border-t-2 ${config.border} ${config.soft}`}>
+                <div className={`rounded-t-xl px-3.5 py-2.5 border-t-2 ${config.border} ${config.soft}`}>
                   <h3 className="font-semibold text-sm text-content">{config.label}</h3>
                   <span className="text-xs text-content-muted">{itens.length} itens</span>
                 </div>
-                <div className="bg-surface-muted rounded-b-2xl border border-t-0 border-border p-2 space-y-2 min-h-[200px]">
+                <div className="bg-surface-muted rounded-b-xl border border-t-0 border-border p-2 space-y-2 min-h-[200px]">
                   {itens.map(ativ => (
                     <div
                       key={ativ.id}

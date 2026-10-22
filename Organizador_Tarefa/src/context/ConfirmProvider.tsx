@@ -39,7 +39,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <button onClick={() => fechar(false)} className="btn btn-secondary">Cancelar</button>
             <button
               onClick={() => fechar(true)}
-              className={`btn ${estado.opcoes.danger === false ? 'btn-primary' : 'bg-bloqueado text-white hover:opacity-90'}`}
+              className={`btn ${estado.opcoes.danger === false ? 'btn-primary' : 'btn-danger-solid'}`}
             >
               {estado.opcoes.confirmLabel ?? 'Confirmar'}
             </button>

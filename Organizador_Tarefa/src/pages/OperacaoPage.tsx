@@ -39,7 +39,7 @@ export function OperacaoPage() {
           </div>
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-content-subtle">Operação</p>
-            <h1 className="text-xl font-bold tracking-tight text-content truncate">{operacao?.nome ?? '...'}</h1>
+            <h1 className="font-display text-xl font-semibold tracking-tight text-content truncate">{operacao?.nome ?? '...'}</h1>
           </div>
         </div>
         {operacao?.descricao && <p className="text-sm text-content-muted mt-1 ml-14">{operacao.descricao}</p>}

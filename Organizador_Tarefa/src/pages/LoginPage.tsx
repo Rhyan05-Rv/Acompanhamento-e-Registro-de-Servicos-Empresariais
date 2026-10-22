@@ -29,7 +29,7 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold text-content mb-1">Bem-vindo de volta</h1>
+      <h1 className="font-display text-[1.8rem] font-semibold leading-tight text-content mb-1">Bem-vindo de volta</h1>
       <p className="muted mb-6">Entre para continuar gerenciando suas operações.</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -56,7 +56,7 @@ export function LoginPage() {
         </Field>
 
         {erro && (
-          <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-xl px-3 py-2">{erro}</p>
+          <p className="text-sm text-bloqueado bg-bloqueado-soft rounded-lg px-3 py-2">{erro}</p>
         )}
 
         <button type="submit" disabled={loading} className="btn btn-primary w-full">
