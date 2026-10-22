@@ -20,9 +20,20 @@ interface Props {
   equipeId?: string
   titulo?: string
   subtitulo?: string
+  etapaAtualId?: string
+  etapaNome?: string
+  onLimparEtapa?: () => void
 }
 
-export function KanbanPage({ operacaoId, equipeId, titulo = 'Tarefas', subtitulo }: Props) {
+export function KanbanPage({
+  operacaoId,
+  equipeId,
+  titulo = 'Tarefas',
+  subtitulo,
+  etapaAtualId,
+  etapaNome,
+  onLimparEtapa,
+}: Props) {
   const [atividades, setAtividades] = useState<Atividade[]>([])
   const [view, setView] = useState<'kanban' | 'lista'>('kanban')
   const [loading, setLoading] = useState(true)
@@ -30,9 +41,9 @@ export function KanbanPage({ operacaoId, equipeId, titulo = 'Tarefas', subtitulo
   const [showNovaAtividade, setShowNovaAtividade] = useState(false)
 
   const carregar = useCallback(async () => {
-    const data = await api.atividades.list({ operacaoId, equipeId })
+    const data = await api.atividades.list({ operacaoId, equipeId, etapaAtualId })
     setAtividades(data)
-  }, [operacaoId, equipeId])
+  }, [operacaoId, equipeId, etapaAtualId])
 
   useEffect(() => {
     carregar().finally(() => setLoading(false))
@@ -73,6 +84,19 @@ export function KanbanPage({ operacaoId, equipeId, titulo = 'Tarefas', subtitulo
           </div>
         </div>
       </div>
+
+      {etapaAtualId && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-2 bg-primary-soft border-b border-border text-sm text-primary">
+          <span className="truncate">
+            Filtrando pela etapa <b>{etapaNome ?? 'selecionada'}</b>
+          </span>
+          {onLimparEtapa && (
+            <button type="button" onClick={onLimparEtapa} className="btn btn-sm btn-secondary shrink-0">
+              Limpar filtro
+            </button>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center">

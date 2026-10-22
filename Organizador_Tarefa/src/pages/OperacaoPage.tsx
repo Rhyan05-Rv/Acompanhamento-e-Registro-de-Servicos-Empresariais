@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
-import type { Operacao } from '../types'
+import type { Departamento, Fluxo, Operacao } from '../types'
 import { DashboardPage } from './DashboardPage'
 import { KanbanPage } from './KanbanPage'
 import { EquipesPage } from './EquipesPage'
@@ -20,9 +20,11 @@ type AbaId = (typeof abas)[number]['id']
 export function OperacaoPage() {
   const { operacaoId } = useParams<{ operacaoId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [operacao, setOperacao] = useState<Operacao | null>(null)
+  const [operacao, setOperacao] = useState<(Operacao & { departamentos: Departamento[]; fluxos: Fluxo[] }) | null>(null)
 
   const aba = (searchParams.get('aba') as AbaId) || 'visao'
+  const etapaId = searchParams.get('etapa')
+  const etapaNome = operacao?.fluxos.flatMap(f => f.etapas).find(e => e.id === etapaId)?.nome
 
   useEffect(() => {
     if (operacaoId) api.operacoes.get(operacaoId).then(setOperacao)
@@ -58,7 +60,16 @@ export function OperacaoPage() {
 
       <div className="flex-1 overflow-auto">
         {aba === 'visao' && <DashboardPage operacaoId={operacaoId} />}
-        {aba === 'kanban' && <KanbanPage operacaoId={operacaoId} titulo="Kanban" subtitulo="Escopado à operação" />}
+        {aba === 'kanban' && (
+          <KanbanPage
+            operacaoId={operacaoId}
+            titulo="Kanban"
+            subtitulo="Escopado à operação"
+            etapaAtualId={etapaId ?? undefined}
+            etapaNome={etapaNome}
+            onLimparEtapa={() => setSearchParams({ aba: 'kanban' })}
+          />
+        )}
         {aba === 'equipes' && <EquipesPage operacaoId={operacaoId} />}
         {aba === 'casos' && <CasosPage operacaoId={operacaoId} />}
       </div>
