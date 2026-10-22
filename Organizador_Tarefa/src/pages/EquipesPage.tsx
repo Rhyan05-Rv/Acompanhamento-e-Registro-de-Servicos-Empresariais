@@ -6,7 +6,7 @@ import { useAsync } from '../hooks/useAsync'
 import { useToast } from '../hooks/useToast'
 import { useConfirm } from '../hooks/useConfirm'
 import { STATUS } from '../theme/status'
-import { Users, ArrowRight, Layers, Plus, X } from 'lucide-react'
+import { Users, ArrowRight, Layers, Plus, X, Lock, Unlock } from 'lucide-react'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Spinner } from '../components/ui/Spinner'
 
@@ -167,13 +167,29 @@ export function EquipesPage({ operacaoId }: { operacaoId: string }) {
                           {et.ordem}. {et.nome}
                         </p>
                         {isGestor && (
-                          <button
-                            onClick={() => removerEtapa(et.id)}
-                            title="Remover etapa"
-                            className="text-content-subtle hover:text-bloqueado transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() =>
+                                executar(
+                                  () => api.fluxos.atualizarEtapa(et.id, !et.requerAprovacao),
+                                  et.requerAprovacao
+                                    ? 'Etapa não exige mais aprovação.'
+                                    : 'Etapa passa a exigir aprovação.'
+                                )
+                              }
+                              title={et.requerAprovacao ? 'Remover exigência de aprovação' : 'Exigir aprovação'}
+                              className={et.requerAprovacao ? 'text-primary hover:text-content transition-colors' : 'text-content-subtle hover:text-primary transition-colors'}
+                            >
+                              {et.requerAprovacao ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                              onClick={() => removerEtapa(et.id)}
+                              title="Remover etapa"
+                              className="text-content-subtle hover:text-bloqueado transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
                       <p className="text-[11px] text-content-subtle mb-2">{et.equipe?.nome}</p>

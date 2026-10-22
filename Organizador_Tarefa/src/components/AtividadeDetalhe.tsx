@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Atividade, Usuario } from '../types'
+import type { AprovacaoEtapa, Atividade, Usuario } from '../types'
 import { api } from '../services/api'
-import { X, ArrowRight, ArrowLeft, Clock, Plus, Edit, Trash2, User, CheckCircle2 } from 'lucide-react'
+import { X, ArrowRight, ArrowLeft, Clock, Plus, Edit, Trash2, User, CheckCircle2, ShieldCheck, ShieldX } from 'lucide-react'
 import { STATUS, STATUS_ORDEM, PRIORIDADE } from '../theme/status'
+import { useAuth } from '../hooks/useAuth'
 import { Modal } from './ui/Modal'
 
 const acaoLabels: Record<string, string> = {
@@ -12,6 +13,7 @@ const acaoLabels: Record<string, string> = {
   avanco_etapa: 'avançou a etapa',
   retorno_etapa: 'retornou a etapa',
   exclusao: 'excluiu a atividade',
+  aprovacao_etapa: 'decidiu a aprovação da etapa',
 }
 
 const acaoIcons: Record<string, typeof Clock> = {
@@ -21,6 +23,7 @@ const acaoIcons: Record<string, typeof Clock> = {
   avanco_etapa: ArrowRight,
   retorno_etapa: ArrowLeft,
   exclusao: Trash2,
+  aprovacao_etapa: ShieldCheck,
 }
 
 const dataHora = (iso: string) => new Date(iso).toLocaleString('pt-BR')
@@ -32,7 +35,9 @@ interface Props {
 }
 
 export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
+  const { usuario } = useAuth()
   const [ativ, setAtiv] = useState<Atividade | null>(null)
+  const [aprovacoes, setAprovacoes] = useState<AprovacaoEtapa[]>([])
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -40,8 +45,12 @@ export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
   const [form, setForm] = useState({ titulo: '', descricao: '', prioridade: 'media', prazoEstimado: '' })
 
   const carregar = useCallback(async () => {
-    const data = await api.atividades.get(atividadeId)
+    const [data, aprovs] = await Promise.all([
+      api.atividades.get(atividadeId),
+      api.aprovacoes.list(atividadeId),
+    ])
     setAtiv(data)
+    setAprovacoes(aprovs)
     setForm({
       titulo: data.titulo,
       descricao: data.descricao ?? '',
@@ -77,6 +86,22 @@ export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
       })
     )
     setSalvando(false)
+  }
+
+  const etapaAprovacao = ativ
+    ? ativ.fluxo?.etapas?.find(etapa => etapa.id === ativ.etapaAtualId) ?? ativ.etapaAtual
+    : null
+  const aprovacaoAtual = ativ ? aprovacoes.find(a => a.etapaId === ativ.etapaAtualId) : undefined
+
+  async function decidirAprovacao(decisao: 'aprovada' | 'rejeitada') {
+    if (!aprovacaoAtual) return
+    let comentario: string | undefined
+    if (decisao === 'rejeitada') {
+      const motivo = window.prompt('Motivo da rejeição (opcional)')
+      if (motivo === null) return
+      comentario = motivo || undefined
+    }
+    await executar(() => api.aprovacoes.decidir(aprovacaoAtual.id, decisao, comentario))
   }
 
   return (
@@ -207,6 +232,88 @@ export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
                   </button>
                 </div>
                 <p className="text-xs text-content-subtle mt-1">Avanço liberado apenas com a etapa atual concluída.</p>
+              </div>
+            )}
+
+            {/* Aprovação da etapa */}
+            {ativ.fluxo && etapaAprovacao?.requerAprovacao && (
+              <div className="card p-4 mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-content">Aprovação da etapa</h3>
+                    <p className="text-xs text-content-muted">
+                      {etapaAprovacao.ordem}. {etapaAprovacao.nome} exige aprovação de gestor.
+                    </p>
+                  </div>
+                  <span
+                    className={`badge ${
+                      aprovacaoAtual?.status === 'aprovada'
+                        ? 'bg-concluido-soft text-concluido'
+                        : aprovacaoAtual?.status === 'rejeitada'
+                          ? 'bg-bloqueado-soft text-bloqueado'
+                          : aprovacaoAtual?.status === 'pendente'
+                            ? 'bg-pendente-soft text-pendente'
+                            : 'bg-surface-muted text-content-muted'
+                    }`}
+                  >
+                    {aprovacaoAtual?.status === 'aprovada'
+                      ? 'Aprovada'
+                      : aprovacaoAtual?.status === 'rejeitada'
+                        ? 'Rejeitada'
+                        : aprovacaoAtual?.status === 'pendente'
+                          ? 'Aguardando aprovação'
+                          : 'Não solicitada'}
+                  </span>
+                </div>
+
+                {aprovacaoAtual?.status === 'aprovada' && (
+                  <p className="text-xs text-content-muted mt-2">
+                    Aprovada por <b className="text-content">{aprovacaoAtual.decididoPor?.nome ?? 'gestor'}</b>
+                    {aprovacaoAtual.decididoEm ? ` em ${dataHora(aprovacaoAtual.decididoEm)}` : ''}.
+                  </p>
+                )}
+
+                {aprovacaoAtual?.status === 'rejeitada' && (
+                  <p className="text-xs text-bloqueado mt-2">
+                    Rejeitada por <b>{aprovacaoAtual.decididoPor?.nome ?? 'gestor'}</b>
+                    {aprovacaoAtual.comentario ? `: ${aprovacaoAtual.comentario}` : '.'}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {(!aprovacaoAtual || aprovacaoAtual.status === 'rejeitada') && (
+                    <button
+                      type="button"
+                      onClick={() => executar(() => api.aprovacoes.solicitar(atividadeId))}
+                      className="btn btn-primary btn-sm"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" /> Solicitar aprovação
+                    </button>
+                  )}
+
+                  {aprovacaoAtual?.status === 'pendente' && usuario?.nivelAcesso === 'gestor' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => decidirAprovacao('aprovada')}
+                        className="btn btn-primary btn-sm"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" /> Aprovar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => decidirAprovacao('rejeitada')}
+                        className="btn btn-danger btn-sm"
+                      >
+                        <ShieldX className="w-3.5 h-3.5" /> Rejeitar
+                      </button>
+                    </>
+                  )}
+
+                  {aprovacaoAtual?.status === 'pendente' && usuario?.nivelAcesso !== 'gestor' && (
+                    <p className="text-xs text-content-subtle">Aguardando decisão de um gestor.</p>
+                  )}
+                </div>
               </div>
             )}
 
