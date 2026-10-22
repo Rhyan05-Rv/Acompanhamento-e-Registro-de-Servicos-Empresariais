@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "node --import tsx --test src/services/metricasCalculos.test.ts src/services/edicaoCalculos.test.ts src/services/escopoCalculos.test.ts src/services/periodoFiltro.test.ts src/services/ordenacaoCalculos.test.ts src/services/analyticsCalculos.test.ts",
+    "test": "node --import tsx --test src/services/metricasCalculos.test.ts src/services/edicaoCalculos.test.ts src/services/escopoCalculos.test.ts src/services/periodoFiltro.test.ts src/services/ordenacaoCalculos.test.ts src/services/analyticsCalculos.test.ts src/services/insightsCalculos.test.ts",
     "db:push": "prisma db push",
     "db:seed": "tsx src/database/seed.ts"
   },
