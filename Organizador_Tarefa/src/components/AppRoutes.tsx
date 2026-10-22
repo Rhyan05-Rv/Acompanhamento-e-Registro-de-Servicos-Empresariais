@@ -18,9 +18,11 @@ import {
   LogOut,
   Building2,
   Menu,
+  Radar,
 } from 'lucide-react'
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const RadarPage = lazy(() => import('../pages/RadarPage').then(m => ({ default: m.RadarPage })))
 const OperacoesPage = lazy(() => import('../pages/OperacoesPage').then(m => ({ default: m.OperacoesPage })))
 const OperacaoPage = lazy(() => import('../pages/OperacaoPage').then(m => ({ default: m.OperacaoPage })))
 const EquipeKanbanPage = lazy(() => import('../pages/EquipeKanbanPage').then(m => ({ default: m.EquipeKanbanPage })))
@@ -60,6 +62,10 @@ function Sidebar({ className = '', onNavigate }: { className?: string; onNavigat
         <NavLink to="/" end className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
           <LayoutDashboard className="w-4 h-4" />
           Dashboard geral
+        </NavLink>
+        <NavLink to="/radar" className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
+          <Radar className="w-4 h-4" />
+          Radar operacional
         </NavLink>
       </div>
 
@@ -187,6 +193,7 @@ export function AppRoutes() {
               <Route path="/register" element={<RegistroPage />} />
               <Route element={<ProtectedLayout />}>
                 <Route index element={<DashboardPage />} />
+                <Route path="radar" element={<RadarPage />} />
                 <Route path="operacoes" element={<OperacoesPage />} />
                 <Route path="operacoes/:operacaoId" element={<OperacaoPage />} />
                 <Route path="operacoes/:operacaoId/equipes/:equipeId" element={<EquipeKanbanPage />} />
