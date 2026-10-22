@@ -181,3 +181,73 @@ export interface Andamento {
   porEquipe: AndamentoEquipe[]
   porFluxo: AndamentoFluxo[]
 }
+
+export interface EtapaAnalytics {
+  etapaId: string
+  etapa: string
+  ordem: number
+  equipe: string
+  wip: number
+  concluidas: number
+  bloqueadas: number
+  tempoMedioHoras: number
+  tempoMaxHoras: number
+  porEquipe: { equipe: string; wip: number; tempoMedioHoras: number }[]
+}
+
+export interface FluxoAnalytics {
+  fluxoId: string
+  fluxo: string
+  operacaoId: string
+  operacao: string
+  total: number
+  concluidas: number
+  progresso: number
+  etapas: EtapaAnalytics[]
+}
+
+export interface CardParado {
+  id: string
+  titulo: string
+  responsavel: string
+  prazoEstimado: string | null
+  horasNaEtapa: number
+  status: StatusAtividade
+}
+
+export interface Gargalo {
+  fluxoId: string
+  fluxo: string
+  operacaoId: string
+  operacao: string
+  etapaId: string
+  etapa: string
+  equipe: string
+  wip: number
+  bloqueadas: number
+  tempoMedioHoras: number
+  tempoMaxHoras: number
+  cardsParados: CardParado[]
+}
+
+export interface FluxoAnalyticsResponse {
+  fluxos: FluxoAnalytics[]
+  gargalos: Gargalo[]
+  geradoEm: string
+}
+
+export interface SeriePonto {
+  rotulo: string
+  criadas: number
+  concluidas: number
+}
+
+export interface SerieAnalytics {
+  pontos: SeriePonto[]
+  totalCriadas: number
+  totalConcluidas: number
+  leadTimeMedioDias: number
+  wipAtual: number
+  bloqueadas: number
+  geradoEm: string
+}

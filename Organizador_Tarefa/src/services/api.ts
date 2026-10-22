@@ -7,9 +7,11 @@ import type {
   Empresa,
   EtapaFluxo,
   Fluxo,
+  FluxoAnalyticsResponse,
   Metricas,
   Operacao,
   OperacaoMembro,
+  SerieAnalytics,
   Usuario,
 } from '../types'
 
@@ -219,5 +221,8 @@ export const api = {
     get: (periodo?: string, operacaoId?: string) =>
       request<Metricas>(`/metricas${qs({ periodo, operacaoId })}`),
     andamento: (operacaoId?: string) => request<Andamento>(`/metricas/andamento${qs({ operacaoId })}`),
+    fluxo: (operacaoId?: string) => request<FluxoAnalyticsResponse>(`/metricas/fluxo${qs({ operacaoId })}`),
+    serie: (periodo?: string, operacaoId?: string) =>
+      request<SerieAnalytics>(`/metricas/serie${qs({ periodo, operacaoId })}`),
   },
 }
