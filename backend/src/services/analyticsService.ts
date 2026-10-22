@@ -1,5 +1,5 @@
 import { prisma } from '../database/prisma.js'
-import { assertAcessoOperacao, escopoOperacoes } from './acesso.js'
+import { escopoAnalitico } from './acesso.js'
 import {
   agruparSerie,
   horasNaEtapa,
@@ -8,23 +8,13 @@ import {
   type MovimentacaoAnalitica,
 } from './analyticsCalculos.js'
 
-async function escopoAnalytics(empresaId: string, userId: string, nivel: string, operacaoId?: string) {
-  if (operacaoId) {
-    await assertAcessoOperacao(operacaoId, userId, empresaId, nivel)
-    return { operacaoId }
-  }
-
-  const ids = await escopoOperacoes(userId, empresaId, nivel)
-  return ids ? { operacaoId: { in: ids } } : {}
-}
-
 export async function getFluxoAnalytics(
   empresaId: string,
   userId: string,
   nivel: string,
   operacaoId?: string
 ) {
-  const where = await escopoAnalytics(empresaId, userId, nivel, operacaoId)
+  const where = await escopoAnalitico(empresaId, userId, nivel, operacaoId)
   const agora = new Date()
 
   const [fluxos, atividades, movimentacoes] = await Promise.all([
@@ -114,7 +104,7 @@ export async function getSerieAnalytics(
   operacaoId?: string,
   periodo?: string
 ) {
-  const where = await escopoAnalytics(empresaId, userId, nivel, operacaoId)
+  const where = await escopoAnalitico(empresaId, userId, nivel, operacaoId)
   const agora = new Date()
 
   const atividades = await prisma.atividade.findMany({

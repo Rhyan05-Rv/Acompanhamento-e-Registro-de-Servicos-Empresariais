@@ -31,6 +31,16 @@ export async function assertOperacaoDaEmpresa(operacaoId: string, empresaId: str
   return operacao
 }
 
+export async function escopoAnalitico(empresaId: string, userId: string, nivel: string, operacaoId?: string) {
+  if (operacaoId) {
+    await assertAcessoOperacao(operacaoId, userId, empresaId, nivel)
+    return { operacaoId }
+  }
+
+  const ids = await escopoOperacoes(userId, empresaId, nivel)
+  return ids ? { operacaoId: { in: ids } } : {}
+}
+
 export async function assertAcessoOperacao(operacaoId: string, userId: string, empresaId: string, nivel: string) {
   await assertOperacaoDaEmpresa(operacaoId, empresaId)
   if (nivel === 'gestor') return
