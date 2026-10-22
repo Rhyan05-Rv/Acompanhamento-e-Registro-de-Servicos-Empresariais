@@ -40,7 +40,7 @@ export function AgingHeatmap({
       {equipes.length === 0 ? (
         <p className="text-sm text-content-subtle py-4">Sem equipes com tarefas em andamento.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto py-1">
           <table className="w-full min-w-max border-separate border-spacing-1">
             <thead>
               <tr>

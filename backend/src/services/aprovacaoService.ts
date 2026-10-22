@@ -18,6 +18,26 @@ async function acharAtividade(id: string, empresaId: string, userId: string, niv
   return atividade
 }
 
+export async function listarAprovacoesPendentes(empresaId: string) {
+  return prisma.aprovacaoEtapa.findMany({
+    where: { status: 'pendente', atividade: { operacao: { empresaId } } },
+    include: {
+      ...includeAprovacao,
+      atividade: {
+        select: {
+          id: true,
+          titulo: true,
+          operacao: { select: { id: true, nome: true } },
+          etapaAtual: { select: { id: true, nome: true, ordem: true } },
+          responsavel: { select: { id: true, nome: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+    take: 100,
+  })
+}
+
 export async function listarAprovacoes(
   atividadeId: string,
   empresaId: string,

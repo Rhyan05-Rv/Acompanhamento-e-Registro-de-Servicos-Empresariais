@@ -108,6 +108,7 @@ model EtapaFluxo {
   movOrigem       MovimentacaoEtapa[] @relation("EtapaOrigem")
   movDestino      MovimentacaoEtapa[] @relation("EtapaDestino")
   aprovacoes      AprovacaoEtapa[]
+  playbookItens   PlaybookItem[]
 
   @@unique([fluxoId, ordem])
 }
@@ -226,6 +227,10 @@ model Playbook {
   criadoPorId String
   criadoPor   Usuario        @relation("PlaybookCriador", fields: [criadoPorId], references: [id])
   itens       PlaybookItem[]
+  frequencia  String?
+  proximaEm   DateTime?
+  ultimaEm    DateTime?
+  ativa       Boolean        @default(true)
   createdAt   DateTime       @default(now())
 
   @@index([empresaId])
@@ -241,6 +246,8 @@ model PlaybookItem {
   prioridade String        @default("media")
   equipeId   String?
   equipe     Departamento? @relation(fields: [equipeId], references: [id])
+  etapaId    String?
+  etapa      EtapaFluxo?   @relation(fields: [etapaId], references: [id])
   offsetDias Int           @default(0)
   ordem      Int           @default(0)
 

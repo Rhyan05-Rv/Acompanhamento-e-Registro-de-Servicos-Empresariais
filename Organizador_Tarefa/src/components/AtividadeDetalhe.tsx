@@ -70,6 +70,7 @@ export function AtividadeDetalhe({ atividadeId, onClose, onChanged }: Props) {
       await acao()
       await carregar()
       onChanged()
+      window.dispatchEvent(new Event('aprovacoes-change'))
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Erro')
     }

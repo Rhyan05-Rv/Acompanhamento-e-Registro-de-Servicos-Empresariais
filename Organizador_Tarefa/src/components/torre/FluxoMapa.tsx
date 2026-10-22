@@ -33,7 +33,7 @@ export function FluxoMapa({
             </div>
           </div>
 
-          <div className="flex items-stretch gap-2 overflow-x-auto pb-1 min-w-max">
+          <div className="flex items-stretch gap-2 overflow-x-auto pt-1 pb-2 min-w-max">
             {fluxo.etapas.map((etapa, i) => (
               <Fragment key={etapa.etapaId}>
                 <button

@@ -4,6 +4,7 @@ import { diferenciarEdicao } from './edicaoCalculos.js'
 import { assertAcessoOperacao, operacoesAcessiveis } from './acesso.js'
 import { periodoFiltro } from './periodoFiltro.js'
 import { ordenarPorPrioridade } from './ordenacaoCalculos.js'
+import { aprovacaoValida } from './aprovacaoCalculos.js'
 
 const includeCard = {
   responsavel: { select: { id: true, nome: true, email: true } },
@@ -282,7 +283,13 @@ async function moverEtapa(id: string, userId: string, empresaId: string, nivel: 
         },
       },
     })
-    if (!aprovacao || aprovacao.status !== 'aprovada') {
+    const entrada = await prisma.movimentacaoEtapa.findFirst({
+      where: { atividadeId: id, etapaDestinoId: atividade.etapaAtual.id },
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true },
+    })
+    const referencia = entrada?.timestamp ?? atividade.dataInicio ?? atividade.createdAt
+    if (!aprovacaoValida(aprovacao, referencia)) {
       throw new AppError('Esta etapa exige aprovação antes de avançar')
     }
   }
@@ -322,6 +329,9 @@ async function moverEtapa(id: string, userId: string, empresaId: string, nivel: 
     where: { atividadeId_usuarioId: { atividadeId: id, usuarioId: responsavelId } },
     update: {},
     create: { atividadeId: id, usuarioId: responsavelId },
+  })
+  await prisma.aprovacaoEtapa.deleteMany({
+    where: { atividadeId: id, etapaId: { in: [atividade.etapaAtual.id, destino.id] } },
   })
   await registrarHistorico(id, userId, direcao === 1 ? 'avanco_etapa' : 'retorno_etapa', {
     campo: 'etapa',

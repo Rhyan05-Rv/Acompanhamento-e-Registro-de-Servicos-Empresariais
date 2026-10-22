@@ -315,6 +315,15 @@ export interface PlaybookItem {
   prioridade: Prioridade
   equipeId?: string | null
   equipe?: { id: string; nome: string } | null
+  etapaId?: string | null
+  etapa?: {
+    id: string
+    nome: string
+    ordem: number
+    equipeId: string
+    equipe?: { id: string; nome: string } | null
+    fluxo?: { id: string; nome: string } | null
+  } | null
   offsetDias: number
   ordem: number
 }
@@ -327,6 +336,10 @@ export interface Playbook {
   nome: string
   descricao?: string | null
   criadoPorId: string
+  frequencia?: 'diaria' | 'semanal' | 'mensal' | null
+  proximaEm?: string | null
+  ultimaEm?: string | null
+  ativa: boolean
   itens: PlaybookItem[]
   createdAt: string
 }
@@ -344,4 +357,14 @@ export interface AprovacaoEtapa {
   comentario?: string | null
   createdAt: string
   decididoEm?: string | null
+}
+
+export interface AprovacaoPendente extends AprovacaoEtapa {
+  atividade?: {
+    id: string
+    titulo: string
+    operacao?: { id: string; nome: string }
+    etapaAtual?: { id: string; nome: string; ordem: number } | null
+    responsavel?: { id: string; nome: string }
+  }
 }

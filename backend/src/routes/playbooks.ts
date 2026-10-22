@@ -6,6 +6,7 @@ import {
   criarPlaybook,
   excluirPlaybook,
   executarPlaybook,
+  processarRecorrentes,
 } from '../services/playbookService.js'
 import { responderErro } from './httpError.js'
 
@@ -17,6 +18,7 @@ const itemSchema = z.object({
   descricao: z.string().optional(),
   prioridade: z.enum(['baixa', 'media', 'alta', 'urgente']).optional(),
   equipeId: z.string().uuid().nullable().optional(),
+  etapaId: z.string().uuid().nullable().optional(),
   offsetDias: z.number().int().min(0).max(365).optional(),
 })
 
@@ -24,10 +26,11 @@ const playbookSchema = z.object({
   nome: z.string().min(1),
   descricao: z.string().optional(),
   operacaoId: z.string().uuid(),
+  frequencia: z.enum(['diaria', 'semanal', 'mensal']).nullable().optional(),
   itens: z.array(itemSchema).min(1),
 })
 
-router.get('/', async (req: AuthRequest, res: Response) => {
+router.get('/', gestorOnly, async (req: AuthRequest, res: Response) => {
   try {
     const { operacaoId } = req.query as { operacaoId?: string }
     return res.json(await listarPlaybooks(req.empresaId!, operacaoId))
@@ -49,6 +52,14 @@ router.delete('/:id', gestorOnly, async (req: AuthRequest, res: Response) => {
   try {
     await excluirPlaybook(req.empresaId!, req.params.id as string)
     return res.status(204).send()
+  } catch (err) {
+    return responderErro(err, res)
+  }
+})
+
+router.post('/processar-recorrentes', gestorOnly, async (_req: AuthRequest, res: Response) => {
+  try {
+    return res.json(await processarRecorrentes())
   } catch (err) {
     return responderErro(err, res)
   }

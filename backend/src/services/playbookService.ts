@@ -2,12 +2,25 @@ import { prisma } from '../database/prisma.js'
 import { AppError } from './errors.js'
 import { assertAcessoOperacao, assertOperacaoDaEmpresa } from './acesso.js'
 import { criarAtividade } from './atividadeService.js'
+import { proximaExecucao } from './recorrenciaCalculos.js'
 
 const includePlaybook = {
   operacao: { select: { id: true, nome: true } },
   itens: {
     orderBy: { ordem: 'asc' as const },
-    include: { equipe: { select: { id: true, nome: true } } },
+    include: {
+      equipe: { select: { id: true, nome: true } },
+      etapa: {
+        select: {
+          id: true,
+          nome: true,
+          ordem: true,
+          equipeId: true,
+          equipe: { select: { id: true, nome: true } },
+          fluxo: { select: { id: true, nome: true } },
+        },
+      },
+    },
   },
 }
 
@@ -23,11 +36,13 @@ export interface PlaybookInput {
   nome: string
   descricao?: string
   operacaoId: string
+  frequencia?: string | null
   itens: {
     titulo: string
     descricao?: string
     prioridade?: string
     equipeId?: string | null
+    etapaId?: string | null
     offsetDias?: number
   }[]
 }
@@ -41,6 +56,14 @@ export async function criarPlaybook(
   await assertOperacaoDaEmpresa(data.operacaoId, empresaId)
 
   for (const item of data.itens) {
+    if (item.etapaId) {
+      const etapa = await prisma.etapaFluxo.findFirst({
+        where: { id: item.etapaId, fluxo: { operacaoId: data.operacaoId } },
+      })
+      if (!etapa) throw new AppError('Etapa inválida para esta operação')
+      continue
+    }
+
     if (!item.equipeId) continue
     const equipe = await prisma.departamento.findFirst({
       where: { id: item.equipeId, operacaoId: data.operacaoId },
@@ -55,12 +78,15 @@ export async function criarPlaybook(
       operacaoId: data.operacaoId,
       nome: data.nome,
       descricao: data.descricao,
+      frequencia: data.frequencia ?? null,
+      proximaEm: proximaExecucao(data.frequencia),
       itens: {
         create: data.itens.map((item, indice) => ({
           titulo: item.titulo,
           descricao: item.descricao,
           prioridade: item.prioridade ?? 'media',
           equipeId: item.equipeId ?? null,
+          etapaId: item.etapaId ?? null,
           offsetDias: item.offsetDias ?? 0,
           ordem: indice,
         })),
@@ -110,14 +136,17 @@ export async function executarPlaybook(
   if (!responsavelPadrao) throw new AppError('A operação não possui membros para receber as tarefas')
 
   for (const item of playbook.itens) {
-    if (item.equipeId && !porEquipe.has(item.equipeId)) {
-      throw new AppError(`A equipe "${item.equipe?.nome ?? 'selecionada'}" não possui membros vinculados`)
+    const equipeId = item.etapa?.equipeId ?? item.equipeId
+    if (equipeId && !porEquipe.has(equipeId)) {
+      const nome = item.etapa?.equipe?.nome ?? item.equipe?.nome ?? 'selecionada'
+      throw new AppError(`A equipe "${nome}" não possui membros vinculados`)
     }
   }
 
   let criadas = 0
   for (const item of playbook.itens) {
-    const responsavelId = item.equipeId ? porEquipe.get(item.equipeId)! : responsavelPadrao
+    const equipeId = item.etapa?.equipeId ?? item.equipeId
+    const responsavelId = equipeId ? porEquipe.get(equipeId)! : responsavelPadrao
     const prazo = new Date()
     prazo.setDate(prazo.getDate() + item.offsetDias)
     prazo.setHours(12, 0, 0, 0)
@@ -130,6 +159,8 @@ export async function executarPlaybook(
         prioridade: item.prioridade,
         prazoEstimado: prazo.toISOString(),
         operacaoId: playbook.operacaoId,
+        fluxoId: item.etapa?.fluxo.id,
+        etapaAtualId: item.etapaId ?? undefined,
       },
       userId,
       empresaId,
@@ -138,5 +169,58 @@ export async function executarPlaybook(
     criadas++
   }
 
+  if (playbook.frequencia) {
+    const agora = new Date()
+    await prisma.playbook.update({
+      where: { id: playbook.id },
+      data: { ultimaEm: agora, proximaEm: proximaExecucao(playbook.frequencia, agora) },
+    })
+  }
+
   return { criadas, operacaoId: playbook.operacaoId }
+}
+
+let processandoRecorrentes = false
+
+// ponytail: agendador in-process; usar cron/fila quando houver mais de uma instância.
+export async function processarRecorrentes(agora: Date = new Date()) {
+  if (processandoRecorrentes) return { executados: 0, falhas: 0 }
+  processandoRecorrentes = true
+
+  try {
+    const devidos = await prisma.playbook.findMany({
+      where: { ativa: true, frequencia: { not: null }, proximaEm: { lte: agora } },
+      select: {
+        id: true,
+        empresaId: true,
+        criadoPorId: true,
+        criadoPor: { select: { nivelAcesso: true } },
+      },
+    })
+
+    let executados = 0
+    let falhas = 0
+
+    for (const playbook of devidos) {
+      try {
+        await executarPlaybook(
+          playbook.empresaId,
+          playbook.criadoPorId,
+          playbook.criadoPor.nivelAcesso,
+          playbook.id
+        )
+        executados++
+      } catch (err) {
+        falhas++
+        console.warn(
+          `[playbooks] recorrência ${playbook.id} falhou:`,
+          err instanceof Error ? err.message : err
+        )
+      }
+    }
+
+    return { executados, falhas }
+  } finally {
+    processandoRecorrentes = false
+  }
 }

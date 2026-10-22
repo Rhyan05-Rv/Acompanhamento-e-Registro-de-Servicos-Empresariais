@@ -7,6 +7,7 @@ import type {
   Empresa,
   EtapaFluxo,
   AprovacaoEtapa,
+  AprovacaoPendente,
   Fluxo,
   FluxoAnalyticsResponse,
   Metricas,
@@ -250,11 +251,13 @@ export const api = {
       nome: string
       descricao?: string
       operacaoId: string
+      frequencia?: 'diaria' | 'semanal' | 'mensal' | null
       itens: {
         titulo: string
         descricao?: string
         prioridade: string
         equipeId?: string | null
+        etapaId?: string | null
         offsetDias: number
       }[]
     }) => request<Playbook>('/playbooks', { method: 'POST', body: JSON.stringify(data) }),
@@ -263,8 +266,13 @@ export const api = {
       request<{ criadas: number; operacaoId: string }>(`/playbooks/${id}/executar`, {
         method: 'POST',
       }),
+    processarRecorrentes: () =>
+      request<{ executados: number; falhas: number }>('/playbooks/processar-recorrentes', {
+        method: 'POST',
+      }),
   },
   aprovacoes: {
+    pendentes: () => request<AprovacaoPendente[]>('/aprovacoes/pendentes'),
     list: (atividadeId: string) =>
       request<AprovacaoEtapa[]>(`/atividades/${atividadeId}/aprovacoes`),
     solicitar: (atividadeId: string) =>

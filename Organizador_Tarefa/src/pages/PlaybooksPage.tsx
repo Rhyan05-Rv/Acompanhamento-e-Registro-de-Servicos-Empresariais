@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BookOpen, Loader2, Play, Plus, Trash2 } from 'lucide-react'
 import { api } from '../services/api'
-import type { Departamento, Operacao, Playbook, Prioridade } from '../types'
+import type { Departamento, Fluxo, Operacao, Playbook, Prioridade } from '../types'
 import { useAsync } from '../hooks/useAsync'
 import { useConfirm } from '../hooks/useConfirm'
 import { useToast } from '../hooks/useToast'
@@ -15,10 +15,17 @@ interface ItemForm {
   titulo: string
   prioridade: Prioridade
   equipeId: string
+  etapaId: string
   offsetDias: number
 }
 
-const novoItem = (): ItemForm => ({ titulo: '', prioridade: 'media', equipeId: '', offsetDias: 0 })
+const novoItem = (): ItemForm => ({ titulo: '', prioridade: 'media', equipeId: '', etapaId: '', offsetDias: 0 })
+
+const FREQUENCIA_LABEL: Record<string, string> = {
+  diaria: 'Diária',
+  semanal: 'Semanal',
+  mensal: 'Mensal',
+}
 
 export function PlaybooksPage() {
   const toast = useToast()
@@ -27,7 +34,8 @@ export function PlaybooksPage() {
   const [salvando, setSalvando] = useState(false)
   const [executando, setExecutando] = useState<string | null>(null)
   const [equipes, setEquipes] = useState<Departamento[]>([])
-  const [form, setForm] = useState({ nome: '', descricao: '', operacaoId: '' })
+  const [fluxos, setFluxos] = useState<Fluxo[]>([])
+  const [form, setForm] = useState({ nome: '', descricao: '', operacaoId: '', frequencia: '' })
   const [itens, setItens] = useState<ItemForm[]>([novoItem()])
 
   const { data, loading, error, run } = useAsync(async () => {
@@ -38,16 +46,29 @@ export function PlaybooksPage() {
   useEffect(() => {
     if (!form.operacaoId) {
       setEquipes([])
+      setFluxos([])
       return
     }
-    api.departamentos.list(form.operacaoId).then(setEquipes).catch(() => setEquipes([]))
+    Promise.all([
+      api.departamentos.list(form.operacaoId),
+      api.fluxos.list(form.operacaoId),
+    ])
+      .then(([departamentos, fluxosOperacao]) => {
+        setEquipes(departamentos)
+        setFluxos(fluxosOperacao)
+      })
+      .catch(() => {
+        setEquipes([])
+        setFluxos([])
+      })
   }, [form.operacaoId])
 
   function fecharModal() {
     setShowNovo(false)
-    setForm({ nome: '', descricao: '', operacaoId: '' })
+    setForm({ nome: '', descricao: '', operacaoId: '', frequencia: '' })
     setItens([novoItem()])
     setEquipes([])
+    setFluxos([])
   }
 
   async function criarPlaybook(e: React.FormEvent) {
@@ -67,10 +88,12 @@ export function PlaybooksPage() {
         nome: form.nome,
         descricao: form.descricao || undefined,
         operacaoId: form.operacaoId,
+        frequencia: form.frequencia ? (form.frequencia as 'diaria' | 'semanal' | 'mensal') : null,
         itens: itens.map(item => ({
           titulo: item.titulo.trim(),
           prioridade: item.prioridade,
-          equipeId: item.equipeId || null,
+          equipeId: item.etapaId ? null : item.equipeId || null,
+          etapaId: item.etapaId || null,
           offsetDias: Number(item.offsetDias) || 0,
         })),
       })
@@ -149,8 +172,14 @@ export function PlaybooksPage() {
                 <div className="min-w-0">
                   <h2 className="font-semibold text-content truncate">{playbook.nome}</h2>
                   <p className="text-xs text-content-subtle truncate">
-                    {playbook.operacao?.nome ?? 'Sem operação'} · {playbook.itens.length} tarefa(s)
+                    {playbook.operacao?.nome ?? 'Sem operação'} · {playbook.itens.length} tarefa(s) ·{' '}
+                    {playbook.frequencia ? FREQUENCIA_LABEL[playbook.frequencia] : 'Manual'}
                   </p>
+                  {playbook.frequencia && playbook.proximaEm && (
+                    <p className="text-[11px] text-content-subtle mt-0.5">
+                      Próxima execução: {new Date(playbook.proximaEm).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -171,7 +200,10 @@ export function PlaybooksPage() {
                       <b className="text-content-muted">{item.ordem + 1}.</b> {item.titulo}
                     </span>
                     <span className="shrink-0 text-content-subtle">
-                      {item.equipe?.nome ?? 'sem equipe'} · D+{item.offsetDias}
+                      {item.etapa
+                        ? `${item.etapa.fluxo?.nome ?? 'fluxo'} · ${item.etapa.nome}`
+                        : item.equipe?.nome ?? 'sem equipe'}{' '}
+                      · D+{item.offsetDias}
                     </span>
                   </li>
                 ))}
@@ -194,7 +226,7 @@ export function PlaybooksPage() {
       {showNovo && (
         <Modal onClose={fecharModal} title="Novo playbook" size="2xl">
           <form onSubmit={criarPlaybook} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="Nome *">
                 <input
                   value={form.nome}
@@ -215,6 +247,18 @@ export function PlaybooksPage() {
                   {(data?.operacoes ?? []).map(operacao => (
                     <option key={operacao.id} value={operacao.id}>{operacao.nome}</option>
                   ))}
+                </select>
+              </Field>
+              <Field label="Recorrência">
+                <select
+                  value={form.frequencia}
+                  onChange={e => setForm(f => ({ ...f, frequencia: e.target.value }))}
+                  className="input"
+                >
+                  <option value="">Manual</option>
+                  <option value="diaria">Diária</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="mensal">Mensal</option>
                 </select>
               </Field>
             </div>
@@ -260,7 +304,7 @@ export function PlaybooksPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                     <select
                       value={item.prioridade}
                       onChange={e => setItens(prev => prev.map((i, idx) => (idx === indice ? { ...i, prioridade: e.target.value as Prioridade } : i)))}
@@ -272,10 +316,29 @@ export function PlaybooksPage() {
                       ))}
                     </select>
                     <select
+                      value={item.etapaId}
+                      onChange={e => setItens(prev => prev.map((i, idx) => (idx === indice ? { ...i, etapaId: e.target.value } : i)))}
+                      className="input !py-1.5 text-xs"
+                      aria-label="Etapa do fluxo"
+                    >
+                      <option value="">Sem etapa</option>
+                      {fluxos.map(fluxo => (
+                        <optgroup key={fluxo.id} label={fluxo.nome}>
+                          {fluxo.etapas.map(etapa => (
+                            <option key={etapa.id} value={etapa.id}>
+                              {etapa.ordem}. {etapa.nome} · {etapa.equipe?.nome}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    <select
                       value={item.equipeId}
                       onChange={e => setItens(prev => prev.map((i, idx) => (idx === indice ? { ...i, equipeId: e.target.value } : i)))}
                       className="input !py-1.5 text-xs"
                       aria-label="Equipe"
+                      disabled={!!item.etapaId}
+                      title={item.etapaId ? 'A equipe vem da etapa do fluxo' : undefined}
                     >
                       <option value="">Equipe (opcional)</option>
                       {equipes.map(equipe => (

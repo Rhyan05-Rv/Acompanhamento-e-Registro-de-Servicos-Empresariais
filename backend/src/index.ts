@@ -15,6 +15,7 @@ import operacaoRoutes from './routes/operacoes.js'
 import insightsRoutes from './routes/insights.js'
 import playbookRoutes from './routes/playbooks.js'
 import aprovacaoRoutes from './routes/aprovacoes.js'
+import { processarRecorrentes } from './services/playbookService.js'
 import { responderErro } from './routes/httpError.js'
 
 const obrigatorias = ['DATABASE_URL', 'JWT_SECRET'] as const
@@ -75,3 +76,11 @@ app.use(tratarErro)
 app.listen(PORT, () => {
   console.log(`Backend rodando na porta ${PORT}`)
 })
+
+const intervaloRecorrencias = setInterval(
+  () => {
+    processarRecorrentes().catch(err => console.error('[playbooks] recorrencias:', err))
+  },
+  5 * 60 * 1000
+)
+intervaloRecorrencias.unref()

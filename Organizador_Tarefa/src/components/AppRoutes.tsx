@@ -20,11 +20,13 @@ import {
   Menu,
   Radar,
   BookOpen,
+  ShieldCheck,
 } from 'lucide-react'
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const RadarPage = lazy(() => import('../pages/RadarPage').then(m => ({ default: m.RadarPage })))
 const PlaybooksPage = lazy(() => import('../pages/PlaybooksPage').then(m => ({ default: m.PlaybooksPage })))
+const AprovacoesPage = lazy(() => import('../pages/AprovacoesPage').then(m => ({ default: m.AprovacoesPage })))
 const OperacoesPage = lazy(() => import('../pages/OperacoesPage').then(m => ({ default: m.OperacoesPage })))
 const OperacaoPage = lazy(() => import('../pages/OperacaoPage').then(m => ({ default: m.OperacaoPage })))
 const EquipeKanbanPage = lazy(() => import('../pages/EquipeKanbanPage').then(m => ({ default: m.EquipeKanbanPage })))
@@ -37,10 +39,26 @@ function navClass(isActive: boolean) {
 function Sidebar({ className = '', onNavigate }: { className?: string; onNavigate?: () => void }) {
   const { usuario, logout } = useAuth()
   const [operacoes, setOperacoes] = useState<Operacao[]>([])
+  const [pendentes, setPendentes] = useState(0)
 
   useEffect(() => {
     api.operacoes.list().then(setOperacoes).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (usuario?.nivelAcesso !== 'gestor') return
+
+    const carregar = () => {
+      api.aprovacoes
+        .pendentes()
+        .then(lista => setPendentes(lista.length))
+        .catch(() => {})
+    }
+
+    carregar()
+    window.addEventListener('aprovacoes-change', carregar)
+    return () => window.removeEventListener('aprovacoes-change', carregar)
+  }, [usuario?.nivelAcesso])
 
   return (
     <aside className={`w-64 shrink-0 bg-surface border-r border-border flex-col ${className}`}>
@@ -96,6 +114,13 @@ function Sidebar({ className = '', onNavigate }: { className?: string; onNavigat
             <div className="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-content-subtle">
               Gestão
             </div>
+            <NavLink to="/aprovacoes" className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
+              <ShieldCheck className="w-4 h-4" />
+              Aprovações
+              {pendentes > 0 && (
+                <span className="ml-auto badge bg-pendente-soft text-pendente !px-2 !py-0">{pendentes}</span>
+              )}
+            </NavLink>
             <NavLink to="/playbooks" className={({ isActive }) => navClass(isActive)} onClick={onNavigate}>
               <BookOpen className="w-4 h-4" />
               Playbooks
@@ -203,6 +228,7 @@ export function AppRoutes() {
                 <Route path="operacoes" element={<OperacoesPage />} />
                 <Route path="operacoes/:operacaoId" element={<OperacaoPage />} />
                 <Route path="operacoes/:operacaoId/equipes/:equipeId" element={<EquipeKanbanPage />} />
+                <Route path="aprovacoes" element={<RequireGestor><AprovacoesPage /></RequireGestor>} />
                 <Route path="playbooks" element={<RequireGestor><PlaybooksPage /></RequireGestor>} />
                 <Route path="admin" element={<RequireGestor><AdminPage /></RequireGestor>} />
               </Route>

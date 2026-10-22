@@ -338,7 +338,7 @@ async function seed() {
   const playbookId = 'b0000000-0000-0000-0000-000000000001'
   await prisma.playbook.upsert({
     where: { id: playbookId },
-    update: { nome: 'Produção de bolo padrão', descricao: 'Checklist de uma encomenda padrão', operacaoId: opBolo.id, empresaId: aurora.id, criadoPorId: adminAurora.id },
+    update: { nome: 'Produção de bolo padrão', descricao: 'Checklist de uma encomenda padrão', operacaoId: opBolo.id, empresaId: aurora.id, criadoPorId: adminAurora.id, frequencia: 'semanal', proximaEm: new Date(Date.now() + 7 * 86400000) },
     create: {
       id: playbookId,
       empresaId: aurora.id,
@@ -346,15 +346,17 @@ async function seed() {
       criadoPorId: adminAurora.id,
       nome: 'Produção de bolo padrão',
       descricao: 'Checklist de uma encomenda padrão',
+      frequencia: 'semanal',
+      proximaEm: new Date(Date.now() + 7 * 86400000),
     },
   })
   await prisma.playbookItem.deleteMany({ where: { playbookId } })
   await prisma.playbookItem.createMany({
     data: [
-      { playbookId, titulo: 'Conferir ingredientes', prioridade: 'alta', equipeId: mistura.id, offsetDias: 0, ordem: 0 },
-      { playbookId, titulo: 'Montar a forma', prioridade: 'media', equipeId: forma.id, offsetDias: 1, ordem: 1 },
-      { playbookId, titulo: 'Assar o lote', prioridade: 'alta', equipeId: forno.id, offsetDias: 2, ordem: 2 },
-      { playbookId, titulo: 'Finalizar e embalar', prioridade: 'media', equipeId: finalizacao.id, offsetDias: 3, ordem: 3 },
+      { playbookId, titulo: 'Conferir ingredientes', prioridade: 'alta', equipeId: mistura.id, etapaId: boloEtapas[0].id, offsetDias: 0, ordem: 0 },
+      { playbookId, titulo: 'Montar a forma', prioridade: 'media', equipeId: forma.id, etapaId: boloEtapas[1].id, offsetDias: 1, ordem: 1 },
+      { playbookId, titulo: 'Assar o lote', prioridade: 'alta', equipeId: forno.id, etapaId: boloEtapas[2].id, offsetDias: 2, ordem: 2 },
+      { playbookId, titulo: 'Finalizar e embalar', prioridade: 'media', equipeId: finalizacao.id, etapaId: boloEtapas[3].id, offsetDias: 3, ordem: 3 },
     ],
   })
 
