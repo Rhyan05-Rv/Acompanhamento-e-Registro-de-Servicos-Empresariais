@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api } from '../services/api'
-import type { Andamento, Atividade } from '../types'
+import type { Atividade } from '../types'
 import { ListChecks, Target, Timer, RotateCcw } from 'lucide-react'
 import {
   PieChart, Pie, Cell,
@@ -13,6 +13,7 @@ import { chartColors } from '../theme/chart'
 import { STATUS, STATUS_ORDEM, PRIORIDADE } from '../theme/status'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Spinner } from '../components/ui/Spinner'
+import { TorreControle } from '../components/torre/TorreControle'
 
 type Aba = 'geral' | 'andamento'
 
@@ -42,17 +43,15 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
   const [pagina, setPagina] = useState(1)
 
   const { data, loading, error, run } = useAsync(async () => {
-    const [atvs, met, and] = await Promise.all([
+    const [atvs, met] = await Promise.all([
       api.atividades.list({ ...(filtroStatus ? { status: filtroStatus } : {}), operacaoId, ...(periodo ? { periodo } : {}) }),
       api.metricas.get(periodo || undefined, operacaoId),
-      api.metricas.andamento(operacaoId),
     ])
-    return { atividades: atvs, metricas: met, andamento: and }
+    return { atividades: atvs, metricas: met }
   }, [filtroStatus, periodo, operacaoId])
 
   const atividades = data?.atividades ?? []
   const metricas = data?.metricas ?? null
-  const andamento = data?.andamento ?? null
 
   const totalPaginas = Math.max(1, Math.ceil(atividades.length / POR_PAGINA))
   const paginaAtual = Math.min(pagina, totalPaginas)
@@ -118,7 +117,7 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
             onClick={() => setAba(t)}
             className={`tab ${aba === t ? 'tab-active' : ''}`}
           >
-            {t === 'geral' ? 'Visão Geral' : 'Andamento do Projeto'}
+            {t === 'geral' ? 'Visão Geral' : 'Torre de Controle'}
           </button>
         ))}
       </div>
@@ -345,79 +344,9 @@ export function DashboardPage({ operacaoId }: { operacaoId?: string } = {}) {
           )}
         </>
       ) : (
-        <AndamentoPainel andamento={andamento} />
+        <TorreControle operacaoId={operacaoId} periodo={periodo} />
       )}
     </div>
   )
 }
 
-function AndamentoPainel({ andamento }: { andamento: Andamento | null }) {
-  if (!andamento) return <p className="text-sm text-content-subtle">Sem dados.</p>
-  return (
-    <div className="space-y-6">
-      <div className="table-wrap">
-        <div className="px-4 py-3 border-b border-border bg-surface-muted">
-          <h3 className="font-semibold text-sm text-content">Progresso por equipe</h3>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Equipe</th>
-              <th>Total</th>
-              <th>Concluídas</th>
-              <th>Em execução</th>
-              <th>Pendentes</th>
-              <th>Bloqueadas</th>
-              <th className="w-48">Progresso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {andamento.porEquipe.map(e => (
-              <tr key={e.equipe}>
-                <td className="font-medium">{e.equipe}</td>
-                <td className="text-content-muted">{e.total}</td>
-                <td className="text-concluido">{e.concluidas}</td>
-                <td className="text-execucao">{e.emExecucao}</td>
-                <td className="text-pendente">{e.pendentes}</td>
-                <td className="text-bloqueado">{e.bloqueadas}</td>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-surface-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${e.progresso}%` }} />
-                    </div>
-                    <span className="text-xs text-content-muted w-9 text-right">{e.progresso}%</span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="space-y-4">
-        {andamento.porFluxo.map(f => (
-          <div key={f.fluxo} className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm text-content">{f.fluxo}</h3>
-              <span className="text-xs text-content-muted">
-                {f.concluidas}/{f.total} concluídas · {f.progresso}%
-              </span>
-            </div>
-            <div className="flex items-stretch gap-2 min-w-max overflow-x-auto pb-1">
-              {f.etapas.map(et => (
-                <div key={et.ordem} className="flex items-center gap-2">
-                  <div className="w-48 bg-surface-muted border border-border rounded-xl p-3">
-                    <p className="text-sm font-medium text-content">{et.ordem}. {et.etapa}</p>
-                    <p className="text-[11px] text-content-subtle mb-1">{et.equipe}</p>
-                    <p className="text-xs text-content-muted">{et.concluidas}/{et.total} concluídas</p>
-                  </div>
-                  {et.ordem < f.etapas.length && <span className="text-content-subtle">→</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
